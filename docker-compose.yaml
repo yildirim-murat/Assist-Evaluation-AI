@@ -1,0 +1,21 @@
+services:
+  split-service:
+    build: ./split-service
+    container_name: split-service
+    volumes:
+      - ./split-service/chunks:/app/chunks
+
+  whisper-service:
+    build: ./whisper-service
+    container_name: whisper-service
+    volumes:
+      - ./split-service/chunks:/app/chunks
+
+  pipeline-service:
+    build: ./pipeline-service
+    container_name: pipeline-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      - split-service
+      - whisper-service
