@@ -3,7 +3,15 @@ import whisper
 import os
 
 app = FastAPI()
-model = whisper.load_model("turbo")
+
+model_name = os.getenv("WHISPER_MODEL", "").strip()
+
+if not model_name:
+    model_name = "small"
+
+print(f"Loading Whisper model: {model_name}")
+
+model = whisper.load_model(model_name)
 
 CHUNK_DIR = "chunks"
 

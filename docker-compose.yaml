@@ -8,6 +8,8 @@ services:
   whisper-service:
     build: ./whisper-service
     container_name: whisper-service
+    environment:
+      - WHISPER_MODEL=turbo
     volumes:
       - ./split-service/chunks:/app/chunks
 
