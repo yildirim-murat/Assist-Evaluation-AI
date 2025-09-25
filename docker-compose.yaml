@@ -21,3 +21,16 @@ services:
     depends_on:
       - split-service
       - whisper-service
+
+  workflow_manager:
+    build: ./workflow_manager
+    network_mode: "host"
+    container_name: c_workflow_manager
+    env_file:
+      - ./workflow_manager/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
