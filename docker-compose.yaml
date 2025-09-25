@@ -21,6 +21,8 @@ services:
     depends_on:
       - split-service
       - whisper-service
+    volumes:
+      - ./split-service/data:/app/data
 
   workflow_manager:
     build: ./workflow_manager
@@ -34,3 +36,5 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    volumes:
+      - ./split-service/data:/app/data
