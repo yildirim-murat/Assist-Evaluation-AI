@@ -14,6 +14,10 @@ app = FastAPI(title="Workflow Manager", version="1.0.0")
 def health_check():
     return {"status": "ok"}
 
+@app.get("/transcrip")
+async def start_transcrip():
+    return await get_transcriber()
+
 @app.get("/strt")
 async def start_workflow():
     is_active = get_is_active()
