@@ -36,7 +36,7 @@ async def get_transcriber():
                 files_payload = {"file": (file, f, "audio/wav")}
                 try:
                     resp = await client.post(
-                        "http://10.106.115.116:8002/transcribe-audio/",
+                        "http://pipeline-service:8002/transcribe-audio/",
                         files=files_payload
                     )
                     try:
