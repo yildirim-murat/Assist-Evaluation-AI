@@ -11,7 +11,7 @@ if not model_name:
 
 print(f"Loading Whisper model: {model_name}")
 
-model = whisper.load_model(model_name)
+model = whisper.load_model(model_name, device="cuda")
 
 CHUNK_DIR = "chunks"
 
