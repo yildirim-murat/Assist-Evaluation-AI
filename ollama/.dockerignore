@@ -1,0 +1,9 @@
+.git
+.gitignore
+node_modules
+dist
+build
+__pycache__
+*.log
+*.tmp
+.DS_Store

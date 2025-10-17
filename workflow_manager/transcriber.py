@@ -3,7 +3,7 @@ import httpx
 from sqlalchemy import create_engine, Table, Column, Integer, String, Text, MetaData
 from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/call_report")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/ai_db")
 engine = create_engine(DATABASE_URL)
 metadata = MetaData()
 
