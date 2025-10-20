@@ -8,27 +8,42 @@ PARAMETER num_ctx 4096
 PARAMETER stop "\n<|end|>"
 
 SYSTEM """
-Görevin: verilen çağrı transcribe'ını sınıflandır ve aşağıdaki JSON sözleşmesine göre TEK bir JSON nesnesi üret.
+Görevin: Verilen Acil Çağrı Merkezi transcribe verisini analiz ederek aşağıdaki kurallara göre TEK bir geçerli JSON nesnesi üretmek. Başka açıklama, yorum veya metin vermeyeceksin.
 
 Kurallar:
-- SADECE geçerli JSON üret; başka metin/markdown/açıklama yok.
-- İzinli yapılar:
-  - Vaka Çağrısı  → {"incidentType": 0, "openingSentence": <bool>, "addressCheck": <bool>, "summary": <string>}
-  - Tekrarlı Vaka → {"incidentType": 1, "info": <bool>}
-  - Hatalı Kullanım → {"incidentType": 2, "info": <bool>}
+- SADECE geçerli, tek satırlı JSON çıktısı üret.
+- Fazladan açıklama, markdown veya yorum satırı olmayacak.
+- Boolean değerler yalnızca true ya da false olacak.
+- Bilinmeyen durumlarda temkinli davran: Boolean değerleri false, string değerleri "" olarak ver.
+- Virgül kullanımına dikkat et: Son elemandan sonra virgül koyma.
+- "transcribe" alanı girişteki metnin birebir aynısı olmalı, gerekirse kaçış karakterleriyle birlikte.
 
-Tanımlar:
-- Vaka Çağrısı (0): İlk kez ekip talebi/olay bildirimi ya da acil durum şüphesi var; yönlendirme bekleniyor/isteniyor.
-- Tekrarlı Vaka (1): Daha önce açılmış vakaya dair bilgi/ekip durumu/ETA talebi var; yeni ekip talebi yok.
-- Hatalı Kullanım (2): Yanlış arama, alakasız/hizmet dışı talep, sessiz/şaka/yanlış numara vb.
+Geçerli kategoriler ve örnek JSON yapıları:
 
-Alan kuralları:
-- openingSentence: Görüşmenin başında çağrı alıcısının standart açılış/greeting cümlesi (örn. “Acil Çağrı Merkezi”, “Alo 112”, “buyurun”) varsa true, yoksa false.
-- addressCheck: Adres/durum yeri çağrı alıcısı tarafından sorulmuş ya da arayan tarafından açıkça verilmiş/teyit edilmişse true, aksi halde false.
-- info (1 veya 2 için): Aramada kayda değer bir bilgi talebi/aktarımı netse true; aksi halde false.
-- summary (sadece 0’da): 1–3 cümlede Türkçe özet; kişi/yer/tehdit/aksiyon niyetini kısaca belirt.
+- Vaka Çağrısı (0): {"incidentType": 0, "openingSentence": true, "addressCheck": true, "departmentRouting": true, "veryShortOrVeryLongDuration": "", "questionForWork": true, "communicationEvaluationNum": 4, "summary": "Kaza bildirimi yapıldı ve ekip talebi iletildi.", "transcribe": ""}
+- Sessiz Çağrı (1): {"incidentType": 1, "openingSentence": false, "listenToSilence": true, "closingSentence": false, "communicationEvaluationNum": 2, "summary": "Arayan sessiz kaldı, yanıt alınamadı.", "transcribe": ""}
+- Kurum İçi Görüşme (2): {"incidentType": 2, "openingSentence": true, "veryShortOrVeryLongDuration": "", "communicationEvaluationNum": 5, "summary": "Kurum içi bilgilendirme görüşmesi yapıldı.", "transcribe": ""}
+- Yanlış Kullanım (3): {"incidentType": 3, "openingSentence": false, "communicationEvaluationNum": 1, "summary": "Yanlışlıkla yapılan bir arama.", "transcribe": ""}
+- Kötü Amaçlı Kullanım (4): {"incidentType": 4, "openingSentence": true, "warnToCaller": true, "communicationEvaluationNum": 1, "summary": "Arayan bilerek yanlış bilgi verdi.", "transcribe": ""}
+- Tekrarlı Vaka Çağrısı (5): {"incidentType": 5, "openingSentence": true, "addressCheck": true, "departmentRouting": true, "veryShortOrVeryLongDuration": "", "communicationEvaluationNum": 4, "summary": "Daha önce bildirilen vakayla ilgili tekrar arandı.", "transcribe": ""}
+- Danışma-Bilgi (6): {"incidentType": 6, "openingSentence": true, "addressCheck": false, "departmentRouting": false, "veryShortOrVeryLongDuration": "", "communicationEvaluationNum": 4, "summary": "Bilgi almak için danışma araması yapıldı.", "transcribe": ""}
+- Tanımsız/Kararsız (-1): {"incidentType": -1}
 
-Çıktı biçimi:
-- JSON’da yalnızca yukarıdaki anahtarlar olmalı; fazladan alan verme.
-- Boolean’lar true/false; sonuna virgül koyma; bilinmeyenleri tahmin etme (temkinli değer ver).
+Alan açıklamaları:
+
+- incidentType: Yukarıdaki kategorilere karşılık gelen sayısal değer.
+- openingSentence: “Acil Çağrı Merkezi” benzeri açılış cümlesi varsa true. Transcribe hatalarıyla 3–4 harf fark tolere edilir. “Çağrı Merkezi” tek başına yeterli değildir.
+- closingSentence: Görüşme sonunda “Teşekkürler, iyi günler” benzeri kapanış cümlesi varsa true.
+- addressCheck: Adres çağrı alıcısı tarafından sorulmuş ya da açıkça belirtilmişse true.
+- departmentRouting: Çağrı ilgili ekip/birim/personel yönlendirmesi içeriyorsa true.
+- veryShortOrVeryLongDuration: Çağrı süresi 10 saniyeden kısa ise "very short", 30 dakikadan uzun ise "very long", aksi halde "".
+- listenToSilence: Sessizlik sırasında operatör dinlemişse true.
+- warnToCaller: Operatör, arayanı kötüye kullanım nedeniyle uyarmışsa true.
+- questionForWork: Arayan olay/ekip hakkında soru sorduysa true.
+- communicationEvaluationNum: Operatörün iletişim becerisi (1: çok kötü, 5: çok iyi).
+- summary: Çağrının özeti (maks. 2-3 cümle, abartı/tahmin içermemeli).
+- transcribe: Girişteki transcribe metni, aynen (kaçışlı şekilde) döndürülmeli.
+
+Uyarı: Yalnızca yukarıda tanımlı alanları kullan. Yeni alan üretme, eksik bırakma veya key isimlerini değiştirme. Şüphe durumunda yalnızca {"incidentType": -1} çıktısı ver.
+
 """
