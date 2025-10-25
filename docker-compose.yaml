@@ -4,6 +4,8 @@ services:
     image: my-ollama:latest
     container_name: ollama
     restart: unless-stopped
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
     ports:
       - "11434:11434"
     volumes:
@@ -45,22 +47,8 @@ services:
       - db
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/ai_db
-    volumes:
-      - ./data:/app/data
-
-  workflow_manager:
-    build: ./workflow_manager
-    container_name: c_workflow_manager
-    ports:
-      - "5000:5000"
-    env_file:
-      - ./workflow_manager/.env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      - OLLAMA_URL=http://ollama:11434
+      - TRANSCRIBE_URL=http://whisper-service:8002/transcribe-audio/
     volumes:
       - ./data:/app/data
 

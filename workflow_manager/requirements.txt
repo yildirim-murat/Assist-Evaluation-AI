@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-python-dotenv
-requests
-httpx[http2]
-sqlalchemy
-psycopg2-binary
-python-multipart
-aiofiles

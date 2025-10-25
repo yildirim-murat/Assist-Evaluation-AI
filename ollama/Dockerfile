@@ -12,4 +12,6 @@ RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
  && sed -i '1s/^\xEF\xBB\xBF//' /usr/local/bin/docker-entrypoint.sh \
  && chmod +x /usr/local/bin/docker-entrypoint.sh
  
+EXPOSE 11434
+
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
