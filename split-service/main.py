@@ -1,12 +1,15 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from pathlib import Path
 import subprocess
 import os
+import re
 
 app = FastAPI()
 
-CHUNK_DIR = "chunks"
+CHUNK_DIR = Path("chunks")
 
 os.makedirs(CHUNK_DIR, exist_ok=True)
+ID_RE = re.compile(r"^\d{15}$")
 
 @app.post("/split-audio/")
 async def split_audio(file: UploadFile = File(...)):
@@ -60,3 +63,25 @@ async def split_audio(file: UploadFile = File(...)):
     os.remove(converted_path)
 
     return {"chunks": chunk_files, "duration": duration}
+
+
+@app.delete("/chunks/{file_code}")
+async def delete_chunks(file_code: str):
+    if not ID_RE.fullmatch(file_code):
+        raise HTTPException(status_code=400, detail="Geçersiz file_code")
+
+    matches = list(CHUNK_DIR.glob(f"{file_code}_*.wav"))
+
+    deleted, errors = [], []
+    for p in matches:
+        try:
+            p.unlink()
+            deleted.append(p.name)
+        except Exception as e:
+            errors.append({"file": p.name, "error": str(e)})
+
+
+    if not deleted and not errors:
+        raise HTTPException(status_code=404, detail="Parça bulunamadı")
+
+    return {"deleted_count": len(deleted), "deleted": deleted, "errors": errors}
